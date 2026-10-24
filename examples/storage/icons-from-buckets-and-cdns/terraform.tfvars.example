@@ -1,0 +1,5 @@
+organization = "acme"
+s3_bucket    = "acme-design"
+s3_key       = "icons/ledger.svg"
+cdn_icon_url = "https://cdn.acme.example/icons/gateway.svg"
+# azure_blob_sas_url = "https://acmedesign.blob.core.windows.net/icons/queue.svg?<sas-token>"

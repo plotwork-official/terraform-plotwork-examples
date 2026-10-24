@@ -10,7 +10,8 @@
 #
 # Environment:
 #   PLOTWORK_API_KEY               the key (not needed for fake)
-#   PLOTWORK_ORG                   also run the organisation example
+#   PLOTWORK_ORG                   also run the organisation examples (the design
+#                                  one sets, then removes, that organisation's brand)
 #   PLOTWORK_PROVIDER_SOURCE_DIR   build the provider from this checkout
 #   PLOTWORK_PROVIDER_VERSION      use this exact registry version, such as 0.1.0-beta.1
 #   TF_BIN                         terraform (default) or tofu
@@ -126,6 +127,32 @@ check_organisation() {
   assert_not_empty library "$(output library)"
 }
 
+# brand_colour ROLE: one colour of the brand_colours output.
+brand_colour() {
+  "$TF" output -json brand_colours | python3 -c 'import json, sys; print(json.load(sys.stdin)[sys.argv[1]])' "$1"
+}
+
+check_design() {
+  assert_equal first_icon_ref "org:${DESIGN_PREFIX}payments-api" "$(output first_icon_ref)"
+  assert_equal first_pattern_id "org:${DESIGN_PREFIX}payments-service" "$(output first_pattern_id)"
+  assert_equal "brand primary" "#2a78d6" "$(brand_colour primary)"
+  assert_not_empty "derived secondary" "$(brand_colour secondary)"
+
+  echo "  change the primary colour (upper case, short form) and apply again"
+  "$TF" apply -auto-approve -input=false -no-color "${VARS[@]}" -var 'primary_colour=#F5A' >"$WORK/apply2.log"
+  assert_equal "brand primary" "#ff55aa" "$(brand_colour primary)"
+  VARS+=(-var 'primary_colour=#F5A')
+}
+
+# design_supported: whether the provider under test has the organisation
+# design resources (0.2 or later). A source build always has them.
+design_supported() {
+  local version="${PLOTWORK_PROVIDER_VERSION:-}" major minor
+  [[ -z "$version" ]] && return 0
+  IFS=. read -r major minor _ <<<"$version"
+  ((major > 0 || minor >= 2))
+}
+
 # --- Running one example --------------------------------------------------
 
 RESULTS=()
@@ -197,6 +224,15 @@ if [[ -n "$SMOKE_ORG" ]]; then
   run_example publishing/organisation-library check_organisation -var "organization=$SMOKE_ORG" -var "folder=Smoke/$RUN_ID"
 else
   RESULTS+=("| \`publishing/organisation-library\` | skipped (PLOTWORK_ORG not set) |")
+fi
+# Prefixed names keep this run's icons and patterns apart from any other's.
+DESIGN_PREFIX="smoke-$RUN_ID-"
+if [[ -z "$SMOKE_ORG" ]]; then
+  RESULTS+=("| \`organisation/brand-icons-and-patterns\` | skipped (PLOTWORK_ORG not set) |")
+elif ! design_supported; then
+  RESULTS+=("| \`organisation/brand-icons-and-patterns\` | skipped (provider $PLOTWORK_PROVIDER_VERSION is older than 0.2) |")
+else
+  run_example organisation/brand-icons-and-patterns check_design -var "organization=$SMOKE_ORG" -var "name_prefix=$DESIGN_PREFIX"
 fi
 
 # --- Report ---------------------------------------------------------------

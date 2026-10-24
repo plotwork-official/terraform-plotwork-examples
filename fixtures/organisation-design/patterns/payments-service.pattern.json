@@ -1,0 +1,74 @@
+{
+  "$schema": "https://docs.plotwork.dev/schemas/plotwork.pattern.json",
+  "name": "payments-service",
+  "title": "Payments service",
+  "summary": "A client pays through a gateway; the payments API authorises with the card provider and queues settlement for a worker that writes the ledger.",
+  "whenToUse": "Start here for any service that takes payments: every team draws the gateway, the authorisation call and the ledger the same way. Start from the queue and worker pattern instead when there is no payment.",
+  "tags": [
+    "payments",
+    "ledger",
+    "settlement",
+    "card provider"
+  ],
+  "templates": {
+    "neutral": "flow \"{{title}}\" direction=down desc=\"{{description}}\"\n\nnode client client \"{{client}}\" sub=\"Web or mobile\"\n\ngroup edge \"Edge\" type=network {\n  node gateway gateway \"{{gateway}}\" sub=\"Checks sign-in\"\n}\n\ngroup app \"{{service}}\" type=app-tier {\n  node api service \"{{api}}\" sub=\"Takes payments\"\n  node worker service \"{{worker}}\" sub=\"Settles payments\"\n}\n\nnode queue queue \"{{queue}}\" sub=\"Settlement jobs\"\n\ngroup data \"Data\" type=data-tier {\n  node db database \"{{database}}\" sub=\"Managed database\"\n}\n\nnode psp external \"{{provider}}\" sub=\"Card network\"\n\nclient -> gateway : \"POST /payments\"\ngateway -> api\napi -> psp : \"charge card\"\napi ..> queue : \"settle later\" role=async\nqueue ..> worker\nworker -> db : \"write ledger\" role=data\n",
+    "aws": "flow \"{{title}}\" provider=aws direction=down desc=\"{{description}}\"\n\nnode client client \"{{client}}\" sub=\"Web or mobile\"\n\ngroup edge \"Edge\" type=network {\n  node gateway gateway \"{{gateway}}\" sub=\"API Gateway\" icon=aws:api-gateway\n}\n\ngroup app \"{{service}}\" type=app-tier {\n  node api service \"{{api}}\" sub=\"Lambda\" icon=aws:lambda\n  node worker service \"{{worker}}\" sub=\"Lambda\" icon=aws:lambda\n}\n\nnode queue queue \"{{queue}}\" sub=\"SQS\" icon=aws:sqs\n\ngroup data \"Data\" type=data-tier {\n  node db database \"{{database}}\" sub=\"DynamoDB\" icon=aws:dynamodb\n}\n\nnode psp external \"{{provider}}\" sub=\"Card network\"\n\nclient -> gateway : \"POST /payments\"\ngateway -> api\napi -> psp : \"charge card\"\napi ..> queue : \"settle later\" role=async\nqueue ..> worker\nworker -> db : \"write ledger\" role=data\n"
+  },
+  "slots": [
+    {
+      "id": "title",
+      "default": "Payments service",
+      "meaning": "The diagram title, which is also its accessible name."
+    },
+    {
+      "id": "description",
+      "default": "A client pays through a gateway. The payments API authorises the card with the provider and queues the settlement, and a worker writes it to the ledger.",
+      "meaning": "One or two sentences that say what the diagram shows, used as its alt text."
+    },
+    {
+      "id": "client",
+      "default": "Checkout",
+      "meaning": "The app or page where people pay."
+    },
+    {
+      "id": "gateway",
+      "default": "API gateway",
+      "meaning": "What checks sign-in before a payment reaches the service."
+    },
+    {
+      "id": "service",
+      "default": "Payments",
+      "meaning": "The team's service, the group around its API and worker."
+    },
+    {
+      "id": "api",
+      "default": "Payments API",
+      "meaning": "The service that takes a payment."
+    },
+    {
+      "id": "worker",
+      "default": "Settlement worker",
+      "meaning": "The worker that settles queued payments."
+    },
+    {
+      "id": "queue",
+      "default": "Settlement queue",
+      "meaning": "The queue between the API and the worker."
+    },
+    {
+      "id": "database",
+      "default": "Ledger",
+      "meaning": "Where settled payments are written."
+    },
+    {
+      "id": "provider",
+      "default": "Card provider",
+      "meaning": "The payment provider that authorises cards."
+    }
+  ],
+  "notes": {
+    "keep": "Keep the gateway in front of the API, the authorisation call to the provider, and the queue between the API and the worker: reviewers look for all three.",
+    "rename": "Rename the parts through the slots. Pick the aws flavour for AWS icons.",
+    "split": "Draw refunds and chargebacks in a second diagram."
+  }
+}

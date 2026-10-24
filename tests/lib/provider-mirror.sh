@@ -6,10 +6,10 @@
 #   source tests/lib/provider-mirror.sh
 #   install_provider_mirror ../terraform-provider-plotwork "$RUNNER_TEMP/plotwork"
 #
-# It exports TF_CLI_CONFIG_FILE. The build is served as version 0.1.0, which
-# the examples' "~> 0.1" accepts.
+# It exports TF_CLI_CONFIG_FILE. The build is served as version 0.2.0, which
+# both the examples' "~> 0.1" and "~> 0.2" accept.
 
-PROVIDER_MIRROR_VERSION="0.1.0"
+PROVIDER_MIRROR_VERSION="0.2.0"
 
 # install_provider_mirror SOURCE_DIR WORK_DIR
 install_provider_mirror() {

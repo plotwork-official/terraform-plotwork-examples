@@ -13,9 +13,11 @@ Every example runs without a cloud account except those under `storage/`, which 
 | [`publishing/personal-stable-link`](examples/publishing/personal-stable-link) | Publish a `.diagram` file with a link that never changes | Every plan |
 | [`publishing/live-values-from-outputs`](examples/publishing/live-values-from-outputs) | Fill a diagram with values only the apply knows | Every plan |
 | [`publishing/organisation-library`](examples/publishing/organisation-library) | Publish to an organisation's private library | Pro organisation |
+| [`organisation/brand-icons-and-patterns`](examples/organisation/brand-icons-and-patterns) | Keep an organisation's brand, custom icons and approved patterns in code | Enterprise organisation |
 | [`storage/aws-s3`](examples/storage/aws-s3) | Write the SVG to S3 | Pro |
 | [`storage/azure-blob-storage`](examples/storage/azure-blob-storage) | Write the SVG to Azure Blob Storage | Pro |
 | [`storage/google-cloud-storage`](examples/storage/google-cloud-storage) | Write the SVG to Cloud Storage | Pro |
+| [`storage/icons-from-buckets-and-cdns`](examples/storage/icons-from-buckets-and-cdns) | Upload organisation icons from S3, Azure Blob Storage or a CDN | Pro organisation |
 
 ```shell
 export PLOTWORK_API_KEY="pw_..."          # from https://app.plotwork.dev, API keys
@@ -30,6 +32,7 @@ terraform init && terraform apply
 ├── examples/                     one root module per example, grouped by use
 │   ├── getting-started/
 │   ├── publishing/
+│   ├── organisation/
 │   └── storage/
 │       └── <example>/
 │           ├── README.md
@@ -42,7 +45,8 @@ terraform init && terraform apply
 ├── fixtures/                     sample infrastructure the examples draw; read as text, never applied
 │   ├── aws-three-tier/
 │   ├── azure-web-app/
-│   └── kubernetes-catalogue/
+│   ├── kubernetes-catalogue/
+│   └── organisation-design/      an icon and a pattern file for the organisation example
 ├── tests/
 │   ├── smoke/run-smoke.sh        runs every example against an API
 │   ├── fake-api/fake_api.py      an in-memory Plotwork API, for runs with no key
@@ -74,7 +78,7 @@ PLOTWORK_API_KEY=pw_... make smoke-production     # https://api.plotwork.dev
 | Variable | Effect |
 |---|---|
 | `PLOTWORK_API_KEY` | The key for that environment |
-| `PLOTWORK_ORG` | Also runs `publishing/organisation-library` in that organisation |
+| `PLOTWORK_ORG` | Also runs `publishing/organisation-library` and `organisation/brand-icons-and-patterns` in that organisation. The second sets and then removes the organisation's brand, so use a test organisation |
 | `PLOTWORK_PROVIDER_VERSION` | Use this exact released version, such as `0.1.0-beta.1` |
 | `PROVIDER_DIR` (make) or `PLOTWORK_PROVIDER_SOURCE_DIR` | Build the provider from a checkout instead |
 | `TF_BIN=tofu` | Run with OpenTofu |
@@ -88,7 +92,7 @@ gh workflow run smoke.yml -R plotwork-official/terraform-plotwork-examples \
 
 The `preview` and `production` environments each hold a secret `PLOTWORK_API_KEY`, and optionally a variable `PLOTWORK_ORG`.
 
-Make those keys from a system identity in the Plotwork admin console (System, then New system identity): a Pro identity, with Daily calls, Hosted diagrams and Stable links bypassed so a run never stops on a limit, then Mint key. For the organisation example, make it Enterprise and set `PLOTWORK_ORG` to its organisation's slug. Production allows system identities only when the API var `SYSTEM_IDENTITIES` is `on`.
+Make those keys from a system identity in the Plotwork admin console (System, then New system identity): a Pro identity, with Daily calls, Hosted diagrams and Stable links bypassed so a run never stops on a limit, then Mint key. For the organisation examples, make it Enterprise and set `PLOTWORK_ORG` to its organisation's slug; its key needs the `design:write` scope for `organisation/brand-icons-and-patterns`. Production allows system identities only when the API var `SYSTEM_IDENTITIES` is `on`.
 
 ## Contributing
 
