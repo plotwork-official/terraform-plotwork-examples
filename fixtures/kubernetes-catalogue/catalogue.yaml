@@ -1,0 +1,107 @@
+# A small service on Kubernetes. Read as text by the examples, never applied.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: catalogue
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: catalogue-api
+  namespace: catalogue
+spec:
+  replicas: 3
+  selector:
+    matchLabels: { app: catalogue-api }
+  template:
+    metadata:
+      labels: { app: catalogue-api }
+    spec:
+      containers:
+        - name: api
+          image: ghcr.io/example/catalogue-api:1.4.2
+          ports: [{ containerPort: 8080 }]
+          env:
+            - name: CACHE_URL
+              value: redis://catalogue-cache:6379
+          envFrom:
+            - configMapRef: { name: catalogue-config }
+            - secretRef: { name: catalogue-db }
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalogue-api
+  namespace: catalogue
+spec:
+  selector: { app: catalogue-api }
+  ports: [{ port: 80, targetPort: 8080 }]
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: catalogue
+  namespace: catalogue
+spec:
+  rules:
+    - host: catalogue.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service: { name: catalogue-api, port: { number: 80 } }
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: catalogue-config
+  namespace: catalogue
+data:
+  CACHE_HOST: catalogue-cache.catalogue.svc
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: catalogue-db
+  namespace: catalogue
+type: Opaque
+stringData:
+  DATABASE_URL: set-by-the-deploy-pipeline
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: catalogue-cache
+  namespace: catalogue
+spec:
+  selector: { app: catalogue-cache }
+  ports: [{ port: 6379 }]
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: catalogue-cache
+  namespace: catalogue
+spec:
+  serviceName: catalogue-cache
+  replicas: 1
+  selector:
+    matchLabels: { app: catalogue-cache }
+  template:
+    metadata:
+      labels: { app: catalogue-cache }
+    spec:
+      containers:
+        - name: redis
+          image: redis:7.4
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: catalogue-api
+  namespace: catalogue
+spec:
+  scaleTargetRef: { apiVersion: apps/v1, kind: Deployment, name: catalogue-api }
+  minReplicas: 3
+  maxReplicas: 10

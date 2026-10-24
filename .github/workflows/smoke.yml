@@ -1,0 +1,84 @@
+# Runs every example against Plotwork's preview or production API.
+#
+# Each GitHub environment (Settings, Environments) holds that API's key:
+#   preview      secret PLOTWORK_API_KEY (a Pro key on api-preview.plotwork.dev)
+#                variable PLOTWORK_ORG (optional: also test an organisation's library)
+#   production   the same, for api.plotwork.dev
+#
+# A release is tested by version (provider_version = 0.1.0-beta.1). With no
+# version, the provider is built from terraform-provider-plotwork at provider_ref.
+name: Smoke
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: The Plotwork API to test against
+        type: choice
+        options: [preview, production]
+        default: preview
+      provider_version:
+        description: A released provider version, such as 0.1.0-beta.1. Empty builds from source.
+        required: false
+      provider_ref:
+        description: With no version, the provider branch, tag or commit to build
+        default: main
+      cli:
+        type: choice
+        options: [terraform, tofu]
+        default: terraform
+  schedule:
+    # Every day at 21:00 UTC: preview, with the provider built from main.
+    - cron: "0 21 * * *"
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: "Smoke: ${{ inputs.environment || 'preview' }}"
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    environment: ${{ inputs.environment || 'preview' }}
+    concurrency:
+      # One run at a time per environment, so two runs never share stable links.
+      group: smoke-${{ inputs.environment || 'preview' }}
+      cancel-in-progress: false
+    env:
+      PROVIDER_VERSION: ${{ inputs.provider_version }}
+      PROVIDER_REF: ${{ inputs.provider_ref || 'main' }}
+      CLI: ${{ inputs.cli || 'terraform' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - if: env.PROVIDER_VERSION == ''
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          repository: plotwork-official/terraform-provider-plotwork
+          ref: ${{ env.PROVIDER_REF }}
+          path: .provider
+          persist-credentials: false
+      - if: env.PROVIDER_VERSION == ''
+        uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: .provider/go.mod
+          cache-dependency-path: .provider/go.sum
+      - if: env.CLI == 'terraform'
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_wrapper: false
+      - if: env.CLI == 'tofu'
+        uses: opentofu/setup-opentofu@a1320f892987e89d278cc92dc5adc984fb93aca4 # v2.0.2
+        with:
+          tofu_wrapper: false
+      - name: Run every example
+        run: |
+          if [ -z "$PROVIDER_VERSION" ]; then export PLOTWORK_PROVIDER_SOURCE_DIR="$GITHUB_WORKSPACE/.provider"; fi
+          tests/smoke/run-smoke.sh "$SMOKE_ENVIRONMENT"
+        env:
+          SMOKE_ENVIRONMENT: ${{ inputs.environment || 'preview' }}
+          TF_BIN: ${{ env.CLI }}
+          PLOTWORK_API_KEY: ${{ secrets.PLOTWORK_API_KEY }}
+          PLOTWORK_ORG: ${{ vars.PLOTWORK_ORG }}
+          PLOTWORK_PROVIDER_VERSION: ${{ env.PROVIDER_VERSION }}

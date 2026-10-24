@@ -1,0 +1,17 @@
+flow "Payments" desc="How a checkout is paid: the API asks the payment service, which records the result and tells the ledger."
+
+node shopper  person   "Shopper"
+node api      gateway  "Checkout API"
+node payments service  "Payment service"  sub="Card and wallet"
+node psp      service  "Card processor"   sub="External"
+
+group data "Data" {
+  node db     database "Payments DB"
+  node ledger queue    "Ledger events"
+}
+
+shopper  -> api      : "pays"
+api      -> payments : "authorise"
+payments -> psp      : "charge"
+payments -> db       : "records"     role=data
+payments -> ledger   : "publishes"   role=data

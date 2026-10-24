@@ -1,0 +1,25 @@
+# Terraform working files
+.terraform/
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.*
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+terraform.tfvars
+*.auto.tfvars
+
+# What the examples write
+examples/**/out/
+
+# Local secrets and editor files
+.envrc
+.env
+.idea/
+.vscode/
+.DS_Store
+__pycache__/
