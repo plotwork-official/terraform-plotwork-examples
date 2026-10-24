@@ -76,6 +76,7 @@ jobs:
         with:
           tofu_wrapper: false
       - name: Run every example
+        id: examples
         run: |
           if [ -z "$PROVIDER_VERSION" ]; then export PLOTWORK_PROVIDER_SOURCE_DIR="$GITHUB_WORKSPACE/.provider"; fi
           tests/smoke/run-smoke.sh "$SMOKE_ENVIRONMENT"
@@ -87,6 +88,8 @@ jobs:
           PLOTWORK_ORG: ${{ vars.PLOTWORK_ORG }}
           PLOTWORK_PROVIDER_VERSION: ${{ env.PROVIDER_VERSION }}
       - name: Check the Free plan's refusals
+        # Runs even when an example failed, so one run reports both suites.
+        if: ${{ !cancelled() && (steps.examples.outcome == 'success' || steps.examples.outcome == 'failure') }}
         run: |
           if [ -z "$PLOTWORK_API_KEY" ]; then echo "No PLOTWORK_FREE_API_KEY in this environment: skipped."; exit 0; fi
           if [ -z "$PROVIDER_VERSION" ]; then export PLOTWORK_PROVIDER_SOURCE_DIR="$GITHUB_WORKSPACE/.provider"; fi
