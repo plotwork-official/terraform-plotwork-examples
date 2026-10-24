@@ -77,7 +77,8 @@ PLOTWORK_API_KEY=pw_... make smoke-production     # https://api.plotwork.dev
 
 | Variable | Effect |
 |---|---|
-| `PLOTWORK_API_KEY` | The key for that environment |
+| `PLOTWORK_API_KEY` | The key for that environment: an Enterprise organisation key with the Diagrams and Brand, icons and patterns scopes |
+| `PLOTWORK_PERSONAL_API_KEY` | A personal key of the same account, for the personal library examples; `PLOTWORK_API_KEY` when unset |
 | `PLOTWORK_ORG` | Also runs `publishing/organisation-library` and `organisation/brand-icons-and-patterns` in that organisation. The second sets and then removes the organisation's brand, so use a test organisation |
 | `PLOTWORK_PROVIDER_VERSION` | Use this exact released version, such as `0.1.0-beta.1` |
 | `PROVIDER_DIR` (make) or `PLOTWORK_PROVIDER_SOURCE_DIR` | Build the provider from a checkout instead |

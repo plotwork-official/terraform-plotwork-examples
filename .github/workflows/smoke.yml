@@ -1,7 +1,8 @@
 # Runs every example against Plotwork's preview or production API.
 #
 # Each GitHub environment (Settings, Environments) holds that API's keys:
-#   preview      secret PLOTWORK_API_KEY (an Enterprise system identity's key on api-preview.plotwork.dev)
+#   preview      secret PLOTWORK_API_KEY (an Enterprise system identity's organisation key, scopes Diagrams
+#                and Brand, icons and patterns) and secret PLOTWORK_PERSONAL_API_KEY (the identity's personal key)
 #                variable PLOTWORK_ORG (its organisation: the library, brand, icons and patterns examples)
 #                secret PLOTWORK_FREE_API_KEY and variable PLOTWORK_FREE_ORG (a Free identity and an
 #                organisation it owns, for the refusals suite; skipped when unset)
@@ -82,6 +83,7 @@ jobs:
           SMOKE_ENVIRONMENT: ${{ inputs.environment || 'preview' }}
           TF_BIN: ${{ env.CLI }}
           PLOTWORK_API_KEY: ${{ secrets.PLOTWORK_API_KEY }}
+          PLOTWORK_PERSONAL_API_KEY: ${{ secrets.PLOTWORK_PERSONAL_API_KEY }}
           PLOTWORK_ORG: ${{ vars.PLOTWORK_ORG }}
           PLOTWORK_PROVIDER_VERSION: ${{ env.PROVIDER_VERSION }}
       - name: Check the Free plan's refusals

@@ -9,7 +9,12 @@
 #   tests/smoke/run-smoke.sh custom       # PLOTWORK_API_URL as set
 #
 # Environment:
-#   PLOTWORK_API_KEY               the key (not needed for fake)
+#   PLOTWORK_API_KEY               the key for every example but the personal ones: in a
+#                                  pipeline, an Enterprise organisation key with the Diagrams
+#                                  and Brand, icons and patterns scopes (not needed for fake)
+#   PLOTWORK_PERSONAL_API_KEY      a personal key of the same account, for the examples that
+#                                  publish to a personal library, which an organisation key
+#                                  never may; PLOTWORK_API_KEY when unset
 #   PLOTWORK_ORG                   also run the organisation examples (the design
 #                                  one sets, then removes, that organisation's brand)
 #   PLOTWORK_PROVIDER_SOURCE_DIR   build the provider from this checkout
@@ -168,8 +173,10 @@ echo "Smoke test: $ENVIRONMENT ($PLOTWORK_API_URL), provider: $PROVIDER_LABEL, C
 
 run_example getting-started/draw-terraform-to-svg check_svg_file
 run_example getting-started/draw-kubernetes-to-svg check_svg_file
-run_example publishing/personal-stable-link check_personal_link -var "environment=smoke-$RUN_ID"
-run_example publishing/live-values-from-outputs check_live_values -var "environment=smoke-$RUN_ID"
+# A personal library takes a personal key: an organisation key publishes only to its organisation.
+PERSONAL_KEY="${PLOTWORK_PERSONAL_API_KEY:-$PLOTWORK_API_KEY}"
+PLOTWORK_API_KEY="$PERSONAL_KEY" run_example publishing/personal-stable-link check_personal_link -var "environment=smoke-$RUN_ID"
+PLOTWORK_API_KEY="$PERSONAL_KEY" run_example publishing/live-values-from-outputs check_live_values -var "environment=smoke-$RUN_ID"
 if [[ -n "$SMOKE_ORG" ]]; then
   run_example publishing/organisation-library check_organisation -var "organization=$SMOKE_ORG" -var "folder=Smoke/$RUN_ID"
 else
