@@ -1,5 +1,6 @@
 # Every pull request: format, validate and lint every example, then run them
-# all against the fake API with Terraform and OpenTofu. Needs no key.
+# all against the fake API with Terraform and OpenTofu, and the Pulumi example
+# with Pulumi. Needs no key.
 name: Validate
 
 on:
@@ -95,3 +96,31 @@ jobs:
         env:
           TF_BIN: ${{ matrix.cli }}
           PLOTWORK_PROVIDER_SOURCE_DIR: ${{ github.workspace }}/.provider
+
+  # The Pulumi example, with the registry provider Pulumi.yaml pins (a source
+  # build cannot be bridged), a local state backend and the fake API. Needs no key.
+  pulumi-fake:
+    name: "Pulumi (fake API): typecheck and up"
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      PULUMI_VERSION: 3.272.0
+      PULUMI_SHA256: 58d545f2b98761051922008ebd381ecef95484d7f7a5ff7faa15d7a780ea84f6
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+      - name: Install the Pulumi CLI
+        run: |
+          archive="pulumi-v${PULUMI_VERSION}-linux-x64.tar.gz"
+          curl -fsSL -o "$RUNNER_TEMP/$archive" "https://github.com/pulumi/pulumi/releases/download/v${PULUMI_VERSION}/$archive"
+          echo "$PULUMI_SHA256  $RUNNER_TEMP/$archive" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/$archive" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/pulumi" >> "$GITHUB_PATH"
+      - name: shellcheck
+        run: shellcheck -x -P . tests/pulumi/run-pulumi.sh
+      - name: Run the Pulumi example against the fake API
+        run: tests/pulumi/run-pulumi.sh fake

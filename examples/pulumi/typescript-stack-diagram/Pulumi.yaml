@@ -1,0 +1,15 @@
+name: plotwork-stack-diagram
+description: Draws a stack's own outputs as a Plotwork diagram, publishes it, and can write the SVG to S3.
+runtime:
+  name: nodejs
+  options:
+    packagemanager: npm
+# Written by `pulumi package add terraform-provider registry.terraform.io/plotwork-official/plotwork 0.1.0-beta.2`.
+# `pulumi install` generates the SDK in sdks/plotwork from it.
+packages:
+  plotwork:
+    source: terraform-provider
+    version: 1.5.0
+    parameters:
+      - registry.terraform.io/plotwork-official/plotwork
+      - 0.1.0-beta.2

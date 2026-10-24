@@ -15,5 +15,6 @@ terraform apply
 | `publishing/` | Publishing to Plotwork: stable links, live values, organisation libraries |
 | `organisation/` | An organisation's brand, custom icons and approved patterns, in code |
 | `storage/` | Writing the SVG to your own cloud storage, and reading icons from it |
+| `pulumi/` | The same provider from a Pulumi program, through Any Terraform Provider. Run with `pulumi install` and `pulumi up` instead |
 
 A pre-release of the provider (`0.1.0-beta.2`) talks to Plotwork's preview API by default. To try one, pin it exactly in `versions.tf`: a range such as `~> 0.1` never selects a pre-release.

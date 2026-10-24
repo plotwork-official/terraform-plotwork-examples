@@ -18,6 +18,7 @@ Every example runs without a cloud account except those under `storage/`, which 
 | [`storage/azure-blob-storage`](examples/storage/azure-blob-storage) | Write the SVG to Azure Blob Storage | Pro |
 | [`storage/google-cloud-storage`](examples/storage/google-cloud-storage) | Write the SVG to Cloud Storage | Pro |
 | [`storage/icons-from-buckets-and-cdns`](examples/storage/icons-from-buckets-and-cdns) | Upload organisation icons from S3, Azure Blob Storage or a CDN | Pro organisation |
+| [`pulumi/typescript-stack-diagram`](examples/pulumi/typescript-stack-diagram) | The same provider from a Pulumi TypeScript program: draw the stack's outputs, publish, write the SVG to S3 | Every plan; Pro for S3 |
 
 ```shell
 export PLOTWORK_API_KEY="pw_..."          # from https://app.plotwork.dev, API keys
@@ -33,6 +34,7 @@ terraform init && terraform apply
 │   ├── getting-started/
 │   ├── publishing/
 │   ├── organisation/
+│   ├── pulumi/                   Pulumi programs that use the provider through Any Terraform Provider
 │   └── storage/
 │       └── <example>/
 │           ├── README.md
@@ -49,6 +51,7 @@ terraform init && terraform apply
 │   └── organisation-design/      an icon and a pattern file for the organisation example
 ├── tests/
 │   ├── smoke/run-smoke.sh        runs every example against an API
+│   ├── pulumi/run-pulumi.sh      runs the Pulumi example against an API, with local state
 │   ├── fake-api/fake_api.py      an in-memory Plotwork API, for runs with no key
 │   └── lib/                      assertions, and serving a provider built from source
 ├── .github/workflows/
@@ -64,6 +67,7 @@ terraform init && terraform apply
 | Files in an example | HashiCorp's standard module structure: `versions.tf`, `providers.tf`, `main.tf`, `variables.tf`, `outputs.tf`, `README.md` |
 | Terraform names | snake_case; every variable and output has a description (TFLint enforces both) |
 | Values | `terraform.tfvars.example` beside each example; real `terraform.tfvars` files are ignored by git |
+| Pulumi examples | `Pulumi.yaml` pins the provider; the SDK it generates (`sdks/`) and `node_modules/` are ignored by git. No `versions.tf`, so `make validate` and `make lint` skip them |
 
 ## The smoke test
 
@@ -83,6 +87,13 @@ PLOTWORK_API_KEY=pw_... make smoke-production     # https://api.plotwork.dev
 | `PLOTWORK_PROVIDER_VERSION` | Use this exact released version, such as `0.1.0-beta.1` |
 | `PROVIDER_DIR` (make) or `PLOTWORK_PROVIDER_SOURCE_DIR` | Build the provider from a checkout instead |
 | `TF_BIN=tofu` | Run with OpenTofu |
+
+The Pulumi example has its own runner, which needs `pulumi` and `node` and uses the registry provider that `Pulumi.yaml` pins:
+
+```shell
+make pulumi-fake                                  # no key: the fake API
+PLOTWORK_API_KEY=pw_... make pulumi-preview       # https://api-preview.plotwork.dev
+```
 
 The Free plan's refusals have their own suite: every paid feature must be refused with the code a customer would see.
 
