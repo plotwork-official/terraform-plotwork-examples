@@ -3,7 +3,7 @@ terraform {
 
   required_providers {
     plotwork = {
-      source = "plotwork-official/plotwork"
+      source  = "plotwork-official/plotwork"
       version = "~> 0.1"
     }
   }
