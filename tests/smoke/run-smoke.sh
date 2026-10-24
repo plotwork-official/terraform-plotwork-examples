@@ -19,7 +19,8 @@
 # require (~> 0.1) is used.
 # The check_* functions run through "$check" and cleanup through trap, which
 # the linter cannot follow.
-# shellcheck disable=SC2329
+# (SC2329 in current shellcheck, SC2317 in older releases.)
+# shellcheck disable=SC2317,SC2329
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -35,7 +36,7 @@ source "$ROOT/tests/lib/provider-mirror.sh"
 WORK="$(mktemp -d)"
 FAKE_PID=""
 cleanup() {
-  [[ -n "$FAKE_PID" ]] && kill "$FAKE_PID" 2>/dev/null || true
+  if [[ -n "$FAKE_PID" ]]; then kill "$FAKE_PID" 2>/dev/null || true; fi
   rm -rf "$WORK"
 }
 trap cleanup EXIT
@@ -164,7 +165,12 @@ EOF
     "$TF" plan -detailed-exitcode -input=false -no-color "${VARS[@]}" >"$WORK/plan.log" 2>&1
     plan_status=$?
     set -e
-    [[ $plan_status -eq 0 ]] && pass "a second plan has no changes" || { cat "$WORK/plan.log" >&2; fail "a second plan wants changes (exit $plan_status)"; }
+    if [[ $plan_status -eq 0 ]]; then
+      pass "a second plan has no changes"
+    else
+      cat "$WORK/plan.log" >&2
+      fail "a second plan wants changes (exit $plan_status)"
+    fi
     published="$("$TF" output -raw url 2>/dev/null || true)"
     "$TF" destroy -auto-approve -input=false -no-color "${VARS[@]}" >"$WORK/destroy.log" 2>&1 || { cat "$WORK/destroy.log" >&2; exit 1; }
     pass "destroyed"
@@ -205,5 +211,5 @@ summary="$(printf '%s\n' \
   "${RESULTS[@]}")"
 echo
 echo "$summary"
-[[ -n "${GITHUB_STEP_SUMMARY:-}" ]] && echo "$summary" >>"$GITHUB_STEP_SUMMARY"
+if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then echo "$summary" >>"$GITHUB_STEP_SUMMARY"; fi
 exit "$FAILED"
