@@ -83,6 +83,13 @@ PLOTWORK_API_KEY=pw_... make smoke-production     # https://api.plotwork.dev
 | `PROVIDER_DIR` (make) or `PLOTWORK_PROVIDER_SOURCE_DIR` | Build the provider from a checkout instead |
 | `TF_BIN=tofu` | Run with OpenTofu |
 
+The Free plan's refusals have their own suite: every paid feature must be refused with the code a customer would see.
+
+```shell
+make denials-fake
+PLOTWORK_API_KEY=pw_free... PLOTWORK_ORG=free-org make denials-preview
+```
+
 In GitHub Actions, run **Smoke** with the environment and the version:
 
 ```shell

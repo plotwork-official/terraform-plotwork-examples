@@ -1,8 +1,10 @@
 # Runs every example against Plotwork's preview or production API.
 #
-# Each GitHub environment (Settings, Environments) holds that API's key:
-#   preview      secret PLOTWORK_API_KEY (a Pro key on api-preview.plotwork.dev)
-#                variable PLOTWORK_ORG (optional: also test an organisation's library)
+# Each GitHub environment (Settings, Environments) holds that API's keys:
+#   preview      secret PLOTWORK_API_KEY (an Enterprise system identity's key on api-preview.plotwork.dev)
+#                variable PLOTWORK_ORG (its organisation: the library, brand, icons and patterns examples)
+#                secret PLOTWORK_FREE_API_KEY and variable PLOTWORK_FREE_ORG (a Free identity and an
+#                organisation it owns, for the refusals suite; skipped when unset)
 #   production   the same, for api.plotwork.dev
 #
 # A release is tested by version (provider_version = 0.1.0-beta.1). With no
@@ -81,4 +83,15 @@ jobs:
           TF_BIN: ${{ env.CLI }}
           PLOTWORK_API_KEY: ${{ secrets.PLOTWORK_API_KEY }}
           PLOTWORK_ORG: ${{ vars.PLOTWORK_ORG }}
+          PLOTWORK_PROVIDER_VERSION: ${{ env.PROVIDER_VERSION }}
+      - name: Check the Free plan's refusals
+        run: |
+          if [ -z "$PLOTWORK_API_KEY" ]; then echo "No PLOTWORK_FREE_API_KEY in this environment: skipped."; exit 0; fi
+          if [ -z "$PROVIDER_VERSION" ]; then export PLOTWORK_PROVIDER_SOURCE_DIR="$GITHUB_WORKSPACE/.provider"; fi
+          tests/denials/run-denials.sh "$SMOKE_ENVIRONMENT"
+        env:
+          SMOKE_ENVIRONMENT: ${{ inputs.environment || 'preview' }}
+          TF_BIN: ${{ env.CLI }}
+          PLOTWORK_API_KEY: ${{ secrets.PLOTWORK_FREE_API_KEY }}
+          PLOTWORK_ORG: ${{ vars.PLOTWORK_FREE_ORG }}
           PLOTWORK_PROVIDER_VERSION: ${{ env.PROVIDER_VERSION }}

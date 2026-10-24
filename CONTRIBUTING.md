@@ -3,7 +3,7 @@
 ## Add an example
 
 1. Make a folder under the group it belongs to, in kebab-case: `examples/<group>/<what-it-does>/`.
-2. Give it the standard files: `versions.tf`, `providers.tf`, `main.tf`, `variables.tf`, `outputs.tf`, `README.md`, `terraform.tfvars.example`. Pin `plotwork-official/plotwork` to `~> 0.1`, or `~> 0.2` for an example that uses the organisation design resources.
+2. Give it the standard files: `versions.tf`, `providers.tf`, `main.tf`, `variables.tf`, `outputs.tf`, `README.md`, `terraform.tfvars.example`. Pin `plotwork-official/plotwork` to `~> 0.1`.
 3. Describe every variable and output. Use snake_case names.
 4. If it can run without a cloud account, add it to `tests/smoke/run-smoke.sh` with a check of its outputs.
 5. Add a row to the table in `README.md`.

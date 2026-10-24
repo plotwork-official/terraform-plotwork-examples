@@ -4,8 +4,7 @@ terraform {
   required_providers {
     plotwork = {
       source = "plotwork-official/plotwork"
-      # plotwork_organization_icon arrived in 0.2.
-      version = "~> 0.2"
+      version = "~> 0.1"
     }
     aws = {
       source  = "hashicorp/aws"

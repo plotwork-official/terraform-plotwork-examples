@@ -23,3 +23,6 @@ examples/**/out/
 .vscode/
 .DS_Store
 __pycache__/
+
+# Local assistant state
+.claude/

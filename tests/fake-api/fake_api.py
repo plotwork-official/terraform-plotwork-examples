@@ -9,7 +9,7 @@ script, and a pattern needs a title, a summary, templates, and a slot for every 
 nothing: every import is the same small flow and every SVG is a placeholder. Use it to
 check the examples and the smoke script; use preview or production to check Plotwork.
 
-Usage: fake_api.py <port> <api-key>
+Usage: fake_api.py <port> <api-key> [<free-plan-key>]
 Python 3.10 or later, standard library only.
 """
 
@@ -388,9 +388,31 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def authorised(self) -> bool:
-        if self.headers.get("X-API-Key") == self.server.api_key:  # type: ignore[attr-defined]
+        """The key is the paid one, or the Free one, whose calls a paid plan would allow are refused as the real API refuses them."""
+        key = self.headers.get("X-API-Key")
+        if key == self.server.api_key:  # type: ignore[attr-defined]
             return True
+        if key is not None and key == self.server.free_key:  # type: ignore[attr-defined]
+            return not self.refused_on_free()
         self.error(401, "auth.invalid_credentials", "That API key is not valid")
+        return False
+
+    # What the Free plan is refused, by method and path, with the real API's code for each.
+    FREE_REFUSALS = (
+        ("POST", r"/v1/import", "plan.rest_not_included"),
+        ("POST", r"/v1/diagrams/render", "plan.rest_not_included"),
+        ("PUT", r"/orgs/[^/]+/brand", "plan.brand_not_included"),
+        ("PUT", r"/orgs/[^/]+/icons/[^/]+", "plan.icons_not_included"),
+        ("POST", r"/orgs/[^/]+/patterns", "plan.governance_not_included"),
+        ("PUT", r"/orgs/[^/]+/patterns/[^/]+", "plan.governance_not_included"),
+    )
+
+    def refused_on_free(self) -> bool:
+        path = self.path.split("?")[0]
+        for method, pattern, code in self.FREE_REFUSALS:
+            if self.command == method and re.fullmatch(pattern, path):
+                self.error(403, code, "The Free plan does not include this")
+                return True
         return False
 
     def base_url(self) -> str:
@@ -423,10 +445,11 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main() -> None:
-    if len(sys.argv) != 3:
-        sys.exit("usage: fake_api.py <port> <api-key>")
+    if len(sys.argv) not in (3, 4):
+        sys.exit("usage: fake_api.py <port> <api-key> [<free-plan-key>]")
     server = ThreadingHTTPServer(("127.0.0.1", int(sys.argv[1])), Handler)
     server.api_key = sys.argv[2]  # type: ignore[attr-defined]
+    server.free_key = sys.argv[3] if len(sys.argv) == 4 else None  # type: ignore[attr-defined]
     print(f"fake-api: listening on http://127.0.0.1:{server.server_address[1]}", flush=True)
     server.serve_forever()
 

@@ -51,7 +51,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }} # tflint --init downloads its ruleset from GitHub
       - name: shellcheck
-        run: shellcheck -x -P . tests/smoke/run-smoke.sh tests/lib/*.sh
+        run: shellcheck -x -P . tests/smoke/run-smoke.sh tests/denials/run-denials.sh tests/lib/*.sh
 
   smoke-fake:
     name: "Smoke (fake API): ${{ matrix.cli }}"
@@ -89,4 +89,9 @@ jobs:
         env:
           TF_BIN: ${{ matrix.cli }}
           PLOTWORK_ORG: smoke-org
+          PLOTWORK_PROVIDER_SOURCE_DIR: ${{ github.workspace }}/.provider
+      - name: Check the Free plan's refusals against the fake API
+        run: tests/denials/run-denials.sh fake
+        env:
+          TF_BIN: ${{ matrix.cli }}
           PLOTWORK_PROVIDER_SOURCE_DIR: ${{ github.workspace }}/.provider

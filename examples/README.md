@@ -16,4 +16,4 @@ terraform apply
 | `organisation/` | An organisation's brand, custom icons and approved patterns, in code |
 | `storage/` | Writing the SVG to your own cloud storage, and reading icons from it |
 
-A pre-release of the provider (`0.2.0-beta.1`) talks to Plotwork's preview API by default. To try one, pin it exactly in `versions.tf`: a range such as `~> 0.1` never selects a pre-release. The examples that use `plotwork_organization_brand`, `plotwork_organization_icon` or `plotwork_pattern` need 0.2 or later and pin `~> 0.2`.
+A pre-release of the provider (`0.1.0-beta.2`) talks to Plotwork's preview API by default. To try one, pin it exactly in `versions.tf`: a range such as `~> 0.1` never selects a pre-release.

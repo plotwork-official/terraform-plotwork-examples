@@ -4,7 +4,7 @@ PROVIDER_DIR ?=
 SHELL := bash
 EXAMPLES := $(shell find examples -name versions.tf -exec dirname {} \; | sort)
 
-.PHONY: help fmt fmt-check validate lint smoke-fake smoke-preview smoke-production
+.PHONY: help fmt fmt-check validate lint smoke-fake smoke-preview smoke-production denials-fake denials-preview denials-production
 
 help: ## List the targets
 	@grep -E '^[a-z-]+:.*## ' $(MAKEFILE_LIST) | awk -F':.*## ' '{ printf "  %-18s %s\n", $$1, $$2 }'
@@ -35,3 +35,12 @@ smoke-preview: ## Run every example against preview (needs PLOTWORK_API_KEY)
 
 smoke-production: ## Run every example against production (needs PLOTWORK_API_KEY)
 	PLOTWORK_PROVIDER_SOURCE_DIR=$(PROVIDER_DIR) tests/smoke/run-smoke.sh production
+
+denials-fake: ## Check the Free plan's refusals against the fake API
+	PLOTWORK_PROVIDER_SOURCE_DIR=$(PROVIDER_DIR) tests/denials/run-denials.sh fake
+
+denials-preview: ## Check the Free plan's refusals on preview (a Free key; PLOTWORK_ORG a Free organisation)
+	PLOTWORK_PROVIDER_SOURCE_DIR=$(PROVIDER_DIR) tests/denials/run-denials.sh preview
+
+denials-production: ## Check the Free plan's refusals on production
+	PLOTWORK_PROVIDER_SOURCE_DIR=$(PROVIDER_DIR) tests/denials/run-denials.sh production

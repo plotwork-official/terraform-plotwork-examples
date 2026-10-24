@@ -31,13 +31,12 @@ export TF
 
 # shellcheck source=tests/lib/assert.sh
 source "$ROOT/tests/lib/assert.sh"
-# shellcheck source=tests/lib/provider-mirror.sh
-source "$ROOT/tests/lib/provider-mirror.sh"
+# shellcheck source=tests/lib/run-setup.sh
+source "$ROOT/tests/lib/run-setup.sh"
 
 WORK="$(mktemp -d)"
-FAKE_PID=""
 cleanup() {
-  if [[ -n "$FAKE_PID" ]]; then kill "$FAKE_PID" 2>/dev/null || true; fi
+  stop_api
   rm -rf "$WORK"
 }
 trap cleanup EXIT
@@ -50,38 +49,10 @@ unset PLOTWORK_ORG
 # A suffix that keeps this run's stable links apart from any other run's.
 RUN_ID="$(printf '%s' "${GITHUB_RUN_ID:-local$(date +%s)}" | tr -cd 'a-z0-9')"
 
-# --- The API --------------------------------------------------------------
+# --- The API and the provider ---------------------------------------------
 
-case "$ENVIRONMENT" in
-  preview) export PLOTWORK_API_URL="https://api-preview.plotwork.dev" ;;
-  production) export PLOTWORK_API_URL="https://api.plotwork.dev" ;;
-  custom) : "${PLOTWORK_API_URL:?set PLOTWORK_API_URL for custom}" ;;
-  fake)
-    port="$(python3 -c 'import socket; s = socket.socket(); s.bind(("127.0.0.1", 0)); print(s.getsockname()[1])')"
-    export PLOTWORK_API_KEY="pw_fake_smoke"
-    python3 "$ROOT/tests/fake-api/fake_api.py" "$port" "$PLOTWORK_API_KEY" 2>"$WORK/fake-api.log" &
-    FAKE_PID=$!
-    export PLOTWORK_API_URL="http://127.0.0.1:$port"
-    for _ in $(seq 50); do curl -s -o /dev/null "$PLOTWORK_API_URL/" && break; sleep 0.1; done
-    ;;
-  *)
-    echo "usage: $0 preview|production|fake|custom" >&2
-    exit 2
-    ;;
-esac
-: "${PLOTWORK_API_KEY:?set PLOTWORK_API_KEY}"
-
-# --- The provider ---------------------------------------------------------
-
-if [[ -n "${PLOTWORK_PROVIDER_SOURCE_DIR:-}" ]]; then
-  echo "Building the provider from $PLOTWORK_PROVIDER_SOURCE_DIR"
-  install_provider_mirror "$PLOTWORK_PROVIDER_SOURCE_DIR" "$WORK/provider"
-  PROVIDER_LABEL="source build"
-elif [[ -n "${PLOTWORK_PROVIDER_VERSION:-}" ]]; then
-  PROVIDER_LABEL="registry $PLOTWORK_PROVIDER_VERSION"
-else
-  PROVIDER_LABEL="registry ~> 0.1"
-fi
+use_api "$ENVIRONMENT" "$WORK"
+use_provider "$WORK"
 
 # The examples run from a copy, so no state or output lands in the checkout.
 mkdir -p "$WORK/repo"
@@ -144,15 +115,6 @@ check_design() {
   VARS+=(-var 'primary_colour=#F5A')
 }
 
-# design_supported: whether the provider under test has the organisation
-# design resources (0.2 or later). A source build always has them.
-design_supported() {
-  local version="${PLOTWORK_PROVIDER_VERSION:-}" major minor
-  [[ -z "$version" ]] && return 0
-  IFS=. read -r major minor _ <<<"$version"
-  ((major > 0 || minor >= 2))
-}
-
 # --- Running one example --------------------------------------------------
 
 RESULTS=()
@@ -167,19 +129,7 @@ run_example() {
   echo
   echo "== $dir"
 
-  if [[ -n "${PLOTWORK_PROVIDER_VERSION:-}" ]]; then
-    # A range never selects a pre-release, so pin the exact version.
-    cat >"$path/smoke_override.tf" <<EOF
-terraform {
-  required_providers {
-    plotwork = {
-      source  = "plotwork-official/plotwork"
-      version = "$PLOTWORK_PROVIDER_VERSION"
-    }
-  }
-}
-EOF
-  fi
+  pin_provider_version "$path"
 
   if (
     set -e
@@ -229,8 +179,6 @@ fi
 DESIGN_PREFIX="smoke-$RUN_ID-"
 if [[ -z "$SMOKE_ORG" ]]; then
   RESULTS+=("| \`organisation/brand-icons-and-patterns\` | skipped (PLOTWORK_ORG not set) |")
-elif ! design_supported; then
-  RESULTS+=("| \`organisation/brand-icons-and-patterns\` | skipped (provider $PLOTWORK_PROVIDER_VERSION is older than 0.2) |")
 else
   run_example organisation/brand-icons-and-patterns check_design -var "organization=$SMOKE_ORG" -var "name_prefix=$DESIGN_PREFIX"
 fi
