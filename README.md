@@ -88,6 +88,8 @@ gh workflow run smoke.yml -R plotwork-official/terraform-plotwork-examples \
 
 The `preview` and `production` environments each hold a secret `PLOTWORK_API_KEY`, and optionally a variable `PLOTWORK_ORG`.
 
+Make those keys from a system identity in the Plotwork admin console (System, then New system identity): a Pro identity, with Daily calls, Hosted diagrams and Stable links bypassed so a run never stops on a limit, then Mint key. For the organisation example, make it Enterprise and set `PLOTWORK_ORG` to its organisation's slug. Production allows system identities only when the API var `SYSTEM_IDENTITIES` is `on`.
+
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md). Licence: [MIT](LICENSE).
